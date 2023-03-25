@@ -1,3 +1,5 @@
+# SubtitleRenamer
+
 This is a Python script that renames subtitles for TV shows to match the corresponding video file names. It can be used to automatically rename a large batch of subtitles in a specified directory.
 
 ## Usage
