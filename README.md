@@ -1,6 +1,6 @@
 # SubtitleRenamer
 
-![AppVeyor](https://img.shields.io/github/actions/workflow/status/zenghaojim33/SubtitleRenamer/publish-docker-next.yml?branch=master)
+[![Python application](https://github.com/zenghaojim33/SubtitleRenamer/actions/workflows/python-app.yml/badge.svg)](https://github.com/zenghaojim33/SubtitleRenamer/actions/workflows/python-app.yml)
 
 This is a Python script that renames subtitles for TV shows to match the corresponding video file names. It can be used to automatically rename a large batch of subtitles in a specified directory.
 
