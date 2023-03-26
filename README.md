@@ -6,7 +6,7 @@ This is a Python script that renames subtitles for TV shows to match the corresp
 
 To run the script, use the following command in the terminal:
 
-python rename_subtitles.py -d [directory]
+`python rename_subtitles.py -d [directory]`
 
 
 Where [directory] is the path to the directory that contains the subtitles and video files.
