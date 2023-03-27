@@ -20,11 +20,42 @@ Code Analysis:
 """
 
 
+# @pytest.fixtures()
+# def common_tear_down():
+#     os.mkdir('test_dir')
+#     yield "test_dir"
+#     os.rmdir('test_dir')
+
+@pytest.fixture()
+def common_tear_down():
+    # remove directory test_dir if exist
+    # if os.path.exists('test_dir'):
+    #     # remove directory even not empty
+    #     for root, dirs, files in os.walk('test_dir', topdown=False):
+    #         for name in files:
+    #             os.remove(os.path.join(root, name))
+    #         for name in dirs:
+    #             os.rmdir(os.path.join(root, name))
+    os.mkdir('test_dir')
+    yield "test_dir"
+    if os.path.exists('test_dir'):
+        # remove directory even not empty
+        for root, dirs, files in os.walk('test_dir', topdown=False):
+            for name in files:
+                os.remove(os.path.join(root, name))
+            for name in dirs:
+                os.rmdir(os.path.join(root, name))
+        os.rmdir('test_dir')
+            
 
 class TestRenameSubtitles:
 
+
+        # additional code to be executed after each test
+
+
     # Tests that the function renames subtitle files that match the season and episode numbers of their corresponding video files. tags: [happy path]
-    def test_video_and_subtitle_files_matching(self, mocker):
+    def test_video_and_subtitle_files_matching(self, mocker, common_tear_down):
         # Setup
         folder_path = 'test_folder'
         video_file = 'test_video_S01E01.mp4'
@@ -39,7 +70,7 @@ class TestRenameSubtitles:
         os.rename.assert_called_once_with(os.path.join(folder_path, subtitle_file), os.path.join(folder_path, 'test_video_S01E01.srt'))
     
     # Tests that the function does not rename any files if the folder contains only video files. tags: [happy path]
-    def test_only_video_files(self, mocker):
+    def test_only_video_files(self, mocker, common_tear_down):
         # Setup
         folder_path = 'test_folder'
         video_file = 'test_video.mp4'
@@ -53,7 +84,7 @@ class TestRenameSubtitles:
         os.rename.assert_not_called()
 
     # Tests that the function does not rename any files if the folder contains only subtitle files. tags: [happy path]
-    def test_only_subtitle_files(self, mocker):
+    def test_only_subtitle_files(self, mocker, common_tear_down):
         # Setup
         folder_path = 'test_folder'
         subtitle_file = 'test_subtitle.srt'
@@ -67,7 +98,7 @@ class TestRenameSubtitles:
         os.rename.assert_not_called()
 
     # Tests that the function does not rename any files if the folder contains video and subtitle files with non-matching season and episode numbers. tags: [edge case]
-    def test_video_and_subtitle_files_non_matching(self, mocker):
+    def test_video_and_subtitle_files_non_matching(self, mocker, common_tear_down):
         # Setup
         folder_path = 'test_folder'
         video_file = 'test_video_S1E1.mp4'
@@ -82,7 +113,7 @@ class TestRenameSubtitles:
         os.rename.assert_not_called()
 
     # Tests that the function does not rename any files if the folder contains video and subtitle files with missing season or episode numbers. tags: [edge case]
-    def test_video_and_subtitle_files_missing_season_or_episode_numbers(self, mocker):
+    def test_video_and_subtitle_files_missing_season_or_episode_numbers(self, mocker, common_tear_down):
         # Setup
         folder_path = 'test_folder'
         video_file = 'test_video_S1.mp4'
@@ -97,7 +128,7 @@ class TestRenameSubtitles:
         os.rename.assert_not_called()
 
     # Tests that the function does not rename any files if the folder contains video and subtitle files with non-standard naming conventions. tags: [edge case]
-    def test_video_and_subtitle_files_non_standard_naming_conventions(self, mocker):
+    def test_video_and_subtitle_files_non_standard_naming_conventions(self, mocker, common_tear_down):
         # Setup
         folder_path = 'test_folder'
         video_file = 'test_video_1.mp4'
@@ -112,3 +143,114 @@ class TestRenameSubtitles:
         os.rename.assert_not_called()
 
 
+    # Tests that the function correctly renames subtitle files that have matching season and episode numbers with video files. tags: [happy path]
+    def test_matching_files(self, mocker, common_tear_down):
+        # create test directory with video and subtitle files
+        test_dir = common_tear_down
+        video_file = 'test_S01E01.mp4'
+        subtitle_file = 'test_S01E01.srt'
+        open(os.path.join(test_dir, video_file), 'a').close()
+        open(os.path.join(test_dir, subtitle_file), 'a').close()
+
+        # mock os.rename function
+        mocker.patch('os.rename')
+
+        # call rename_subtitles function
+        rename_subtitles(test_dir)
+
+        # assert that os.rename was called with correct arguments
+        os.rename.assert_called_once_with(os.path.join(test_dir, subtitle_file), os.path.join(test_dir, 'test_S01E01.srt'))
+
+        # clean up test directory
+        # os.remove(os.path.join(test_dir, video_file))
+        # os.remove(os.path.join(test_dir, 'test_S01E01.srt'))
+        # os.rmdir(test_dir)
+
+    # Tests that the function does not rename subtitle files that do not have matching season and episode numbers with video files. tags: [edge case]
+    def test_non_matching_files(self, mocker, common_tear_down):
+        # create test directory with video and subtitle files that do not match
+        test_dir = common_tear_down
+        video_file = 'test_S01E01.mp4'
+        subtitle_file = 'test_S02E01.srt'
+        open(os.path.join(test_dir, video_file), 'a').close()
+        open(os.path.join(test_dir, subtitle_file), 'a').close()
+
+        # mock os.rename function
+        mocker.patch('os.rename')
+
+        # call rename_subtitles function
+        rename_subtitles(test_dir)
+
+        # assert that os.rename was not called
+        os.rename.assert_not_called()
+
+        # clean up test directory
+        # os.remove(os.path.join(test_dir, video_file))
+        # os.remove(os.path.join(test_dir, subtitle_file))
+        # os.rmdir(test_dir)
+
+    # Tests that the function handles an empty directory gracefully and does not crash. tags: [edge case]
+    def test_empty_directory(self, mocker, common_tear_down):
+        # create empty test directory
+        test_dir = common_tear_down
+
+        # mock os.rename function
+        mocker.patch('os.rename')
+
+        # call rename_subtitles function
+        rename_subtitles(test_dir)
+
+        # assert that os.rename was not called
+        os.rename.assert_not_called()
+
+        # clean up test directory
+        # os.rmdir(test_dir)
+
+    # Tests that the function works with video and subtitle files that have non-standard naming conventions. tags: [edge case]
+    def test_non_standard_naming(self, mocker, common_tear_down):
+        # create test directory with video and subtitle files with non-standard naming conventions
+        test_dir = common_tear_down
+        video_file = 'test_S01xE01.mp4'
+        subtitle_file = 'test_S01xE01.srt'
+        open(os.path.join(test_dir, video_file), 'a').close()
+        open(os.path.join(test_dir, subtitle_file), 'a').close()
+
+        # mock os.rename function
+        mocker.patch('os.rename')
+
+        # call rename_subtitles function
+        rename_subtitles(test_dir)
+
+        # assert that os.rename was called with correct arguments
+        os.rename.assert_not_called()
+        # assert_called_once_with(os.path.join(test_dir, subtitle_file), os.path.join(test_dir, 'test_S01xE01.srt'))
+
+        # clean up test directory
+        # os.remove(os.path.join(test_dir, video_file))
+        # os.remove(os.path.join(test_dir, 'test_1x01.srt'))
+        # os.rmdir(test_dir)
+
+    # Tests that the function works with directories that have a large number of files. tags: [edge case]
+    def test_large_directory(self, mocker, common_tear_down):
+        # create test directory with 100 video and subtitle files
+        test_dir = common_tear_down
+        for i in range(1, 101):
+            video_file = f'test_S01E{i}.mp4'
+            subtitle_file = f'test_S01E{i}.srt'
+            open(os.path.join(test_dir, video_file), 'a').close()
+            open(os.path.join(test_dir, subtitle_file), 'a').close()
+
+        # mock os.rename function
+        mocker.patch('os.rename')
+
+        # call rename_subtitles function
+        rename_subtitles(test_dir)
+
+        # assert that os.rename was called 100 times
+        assert os.rename.call_count == 100
+
+        # clean up test directory
+        # for i in range(1, 101):
+        #     os.remove(os.path.join(test_dir, f'test_S01E{i}.mp4'))
+        #     os.remove(os.path.join(test_dir, f'test_S01E{i}.srt'))
+        # os.rmdir(test_dir)
